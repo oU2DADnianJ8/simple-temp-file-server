@@ -1,7 +1,7 @@
 {
 	"info": {
 		"_postman_id": "f853fc4a-1a18-489f-9492-f54f2d37a85c",
-		"name": "simple-file-server",
+                "name": "simple-temp-file-server",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [

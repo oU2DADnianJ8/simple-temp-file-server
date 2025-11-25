@@ -1,4 +1,4 @@
-module github.com/flaviostutz/simple-file-server
+module github.com/flaviostutz/simple-temp-file-server
 
 go 1.14
 
