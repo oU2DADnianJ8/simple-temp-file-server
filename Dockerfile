@@ -8,13 +8,13 @@ ENV DATA_DIR '/data'
 
 RUN apk add --no-cache build-base
 
-WORKDIR /simple-file-server
+WORKDIR /simple-temp-file-server
 
 ADD go.mod .
 RUN go mod download
 
-ADD / /simple-file-server
-WORKDIR /simple-file-server
+ADD / /simple-temp-file-server
+WORKDIR /simple-temp-file-server
 # RUN go test
 RUN go build -o /usr/bin/simple-file-server
 
