@@ -16,7 +16,7 @@ RUN go mod download
 ADD / /simple-temp-file-server
 WORKDIR /simple-temp-file-server
 # RUN go test
-RUN go build -o /usr/bin/simple-file-server
+RUN go build -o /usr/bin/simple-temp-file-server
 
 ADD startup.sh /
 

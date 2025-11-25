@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
 
-  simple-file-server:
+  simple-temp-file-server:
     build: .
     image: oU2DADnianJ8/simple-temp-file-server
     ports:

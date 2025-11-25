@@ -1,8 +1,8 @@
-# simple-file-server
+# simple-temp-file-server
 
-[<img src="https://img.shields.io/docker/pulls/flaviostutz/simple-file-server"/>](https://hub.docker.com/r/flaviostutz/simple-file-server)
-[<img src="https://img.shields.io/docker/automated/flaviostutz/simple-file-server"/>](https://hub.docker.com/r/flaviostutz/simple-file-server)<br/>
-[<img src="https://goreportcard.com/badge/github.com/flaviostutz/simple-file-server"/>](https://goreportcard.com/report/github.com/flaviostutz/simple-file-server)
+[<img src="https://img.shields.io/docker/pulls/flaviostutz/simple-temp-file-server"/>](https://hub.docker.com/r/flaviostutz/simple-temp-file-server)
+[<img src="https://img.shields.io/docker/automated/flaviostutz/simple-temp-file-server"/>](https://hub.docker.com/r/flaviostutz/simple-temp-file-server)<br/>
+[<img src="https://goreportcard.com/badge/github.com/flaviostutz/simple-temp-file-server"/>](https://goreportcard.com/report/github.com/flaviostutz/simple-temp-file-server)
 
 Simple HTTP based file server.
 
@@ -21,7 +21,7 @@ version: '3.7'
 
 services:
 
-  simple-file-server:
+  simple-temp-file-server:
     build: .
     image: oU2DADnianJ8/simple-temp-file-server
     ports:
@@ -71,7 +71,7 @@ To run automated tests againts REST API, run
 docker-compose -f docker-compose.test.yml up --build
 ```
 
-This will build and run "simple-file-server" and another container with POSTMAN scripts to be executed against the server and check results.
+This will build and run "simple-temp-file-server" and another container with POSTMAN scripts to be executed against the server and check results.
 
 For more info on how this "POSTMAN" runner works, go to https://github.com/flaviostutz/postman-runner
 
