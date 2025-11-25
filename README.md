@@ -23,7 +23,7 @@ services:
 
   simple-file-server:
     build: .
-    image: flaviostutz/simple-file-server
+    image: oU2DADnianJ8/simple-temp-file-server
     ports:
       - "4000:4000"
     environment:
