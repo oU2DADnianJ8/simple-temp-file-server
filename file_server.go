@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -35,7 +36,7 @@ func startFileServer() {
 
 func fileServer(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("File %s. uri=%s", r.Method, r.RequestURI)
-	//handle file GET
+	// handle file GET
 	if r.Method == "GET" {
 		if !checkAuthBearer(r, opt.readSharedKey) {
 			w.WriteHeader(403)
@@ -44,14 +45,14 @@ func fileServer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ruri := r.RequestURI
-
-		fn := opt.metaDir + ruri + ".json"
-
-		if !fileExists(fn) {
+		resolvedURI, err := resolveExistingFileLocation(ruri)
+		if err != nil {
 			w.WriteHeader(404)
 			w.Write([]byte("Not found"))
 			return
 		}
+
+		fn := metadataFilePath(resolvedURI)
 
 		fileMeta, err := ioutil.ReadFile(fn)
 		if err != nil {
@@ -72,7 +73,7 @@ func fileServer(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Last-Modified", metadata["lastModified"])
 		w.Header().Set("ETag", metadata["etag"])
 		cc := metadata["cacheControl"]
-		matchETag := r.Header["If-None-Match"]		
+		matchETag := r.Header["If-None-Match"]
 
 		if cc != "undefined" {
 			w.Header().Set("Cache-Control", cc)
@@ -85,10 +86,15 @@ func fileServer(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		baseFileServer.ServeHTTP(w, r)
+		rCopy := *r
+		rCopy.URL = new(http.URL)
+		*rCopy.URL = *r.URL
+		rCopy.URL.Path = resolvedURI
+
+		baseFileServer.ServeHTTP(w, &rCopy)
 		return
 
-		//handle file POST
+		// handle file POST
 	} else if r.Method == "POST" || r.Method == "PUT" {
 		if !checkAuthBearer(r, opt.writeSharedKey) {
 			w.WriteHeader(403)
@@ -111,9 +117,7 @@ func fileServer(w http.ResponseWriter, r *http.Request) {
 		logrus.Debugf("Creating new file %s", fileLocation)
 
 		//PREPARE METADATA
-		metadataFile := opt.metaDir + fileLocation + ".json"
-		metadataFile = strings.ReplaceAll(metadataFile, "//", "/")
-		newFile := !fileExists(metadataFile)
+		fileLocation, metadataFile, newFile := resolveWriteLocation(fileLocation)
 
 		if !newFile && r.Method == "PUT" {
 			//check file overwrite precondictions
@@ -256,31 +260,25 @@ func fileServer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ruri := r.RequestURI
-
-		//METADATA FILE
-		fn := opt.metaDir + ruri + ".json"
-
-		if !fileExists(fn) {
+		resolvedURI, err := resolveExistingFileLocation(ruri)
+		if err != nil {
 			w.WriteHeader(404)
 			w.Write([]byte("Not found"))
 			return
 		}
 
-		err := os.Remove(fn)
+		// METADATA FILE
+		fn := metadataFilePath(resolvedURI)
+
+		err = os.Remove(fn)
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte(fmt.Sprintf("File metadata removal error. err=%s", err)))
 			return
 		}
 
-		//CONTENTS FILE
-		fn = opt.filesDir + ruri
-
-		if !fileExists(fn) {
-			w.WriteHeader(404)
-			w.Write([]byte("Not found"))
-			return
-		}
+		// CONTENTS FILE
+		fn = opt.filesDir + resolvedURI
 
 		err = os.Remove(fn)
 		if err != nil {
@@ -297,6 +295,51 @@ func fileServer(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(400)
 	w.Write([]byte(fmt.Sprintf("HTTP Method not supported. method=%s", r.Method)))
+}
+
+func resolveExistingFileLocation(ruri string) (string, error) {
+	cleanURI := strings.ReplaceAll(ruri, "//", "/")
+	metaFile := metadataFilePath(cleanURI)
+	if fileExists(metaFile) {
+		return cleanURI, nil
+	}
+
+	ext := path.Ext(cleanURI)
+	if ext == "" {
+		return "", fmt.Errorf("metadata not found")
+	}
+
+	withoutExt := strings.TrimSuffix(cleanURI, ext)
+	metaFile = metadataFilePath(withoutExt)
+	if fileExists(metaFile) {
+		return withoutExt, nil
+	}
+
+	return "", fmt.Errorf("metadata not found")
+}
+
+func resolveWriteLocation(ruri string) (string, string, bool) {
+	cleanURI := strings.ReplaceAll(ruri, "//", "/")
+	metaFile := metadataFilePath(cleanURI)
+	if fileExists(metaFile) {
+		return cleanURI, metaFile, false
+	}
+
+	ext := path.Ext(cleanURI)
+	if ext != "" {
+		withoutExt := strings.TrimSuffix(cleanURI, ext)
+		altMeta := metadataFilePath(withoutExt)
+		if fileExists(altMeta) {
+			return withoutExt, altMeta, false
+		}
+	}
+
+	return cleanURI, metaFile, true
+}
+
+func metadataFilePath(fileLocation string) string {
+	metadataFile := opt.metaDir + fileLocation + ".json"
+	return strings.ReplaceAll(metadataFile, "//", "/")
 }
 
 func checkAuthBearer(r *http.Request, sharedKey string) bool {
