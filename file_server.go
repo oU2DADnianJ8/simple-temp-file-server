@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"regexp"
@@ -87,7 +88,7 @@ func fileServer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		rCopy := *r
-		rCopy.URL = new(http.URL)
+		rCopy.URL = new(url.URL)
 		*rCopy.URL = *r.URL
 		rCopy.URL.Path = resolvedURI
 
